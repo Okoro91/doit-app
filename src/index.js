@@ -4,9 +4,15 @@ const content = document.getElementById("content");
 
 content.innerHTML = `
 <p>Towards a productive day</p>
-<div id=taslist></div>
+<h4>Projects</h4>
+<select id="project-select">
+  <option value="Default">Default</option>
+</select>
+<button id="add-project">Add Project</button>
+<h4>All Tasks</h4>
+<div id="task-list"></div>
 <button id="add-todo">Add Todo</button>
-<dialog id="todo-dialog">
+<dialog id="todo-dialog"> 
   <form method="dialog">
     <label for="title">Title:</label>
     <input type="text" id="title" name="title" required />
@@ -29,16 +35,34 @@ content.innerHTML = `
   </form>
 </dialog>
 `;
-const taslist = document.getElementById("taslist");
+
+const projectSelect = document.getElementById("project-select");
+const addProjectBtn = document.getElementById("add-project");
+const taskList = document.getElementById("task-list");
 const addTodoBtn = document.getElementById("add-todo");
 const todoDialog = document.getElementById("todo-dialog");
 const cancelBtn = document.getElementById("cancel-btn");
 
-const TaskData = JSON.parse(localStorage.getItem("TaskData")) || [];
+const projectData = JSON.parse(localStorage.getItem("projects")) || {
+  Default: [],
+};
+
+let currentProject = "Default";
+
+const renderProjects = () => {
+  projectSelect.innerHTML = "";
+  Object.keys(projectData).forEach((project) => {
+    const option = document.createElement("option");
+    option.value = project;
+    option.textContent = project;
+    if (project === currentProject) option.selected = true;
+    projectSelect.appendChild(option);
+  });
+};
 
 const renderTodo = () => {
-  taslist.innerHTML = "";
-  TaskData.forEach((todo, index) => {
+  taskList.innerHTML = "";
+  projectData[currentProject].forEach((todo, index) => {
     const todoDiv = document.createElement("div");
     todoDiv.classList.add("todo-item");
     todoDiv.innerHTML = `
@@ -47,10 +71,27 @@ const renderTodo = () => {
       <p>Due Date: ${todo.dueDate}</p>
       <p>Priority: ${todo.priority}</p>
     `;
-    taslist.appendChild(todoDiv);
+    taskList.appendChild(todoDiv);
   });
 };
 
+addProjectBtn.addEventListener("click", () => {
+  const name = prompt("Enter project name:");
+  if (name && !projectData[name]) {
+    projectData[name] = [];
+    localStorage.setItem("projects", JSON.stringify(projectData));
+    currentProject = name;
+    renderProjects();
+    renderTodo();
+  } else if (projectData[name]) {
+    alert("Project already exists!");
+  }
+});
+
+projectSelect.addEventListener("change", (e) => {
+  currentProject = e.target.value;
+  renderTodo();
+});
 addTodoBtn.addEventListener("click", () => {
   todoDialog.showModal();
 });
@@ -67,11 +108,11 @@ todoDialog.addEventListener("submit", (e) => {
     document.getElementById("dueDate").value,
     document.getElementById("priority").value
   );
-  TaskData.push(newTodo);
-  localStorage.setItem("TaskData", JSON.stringify(TaskData));
+  projectData[currentProject].push(newTodo);
+  localStorage.setItem("projects", JSON.stringify(projectData));
   renderTodo();
   todoDialog.close();
   todoDialog.querySelector("form").reset();
 });
 
-renderTodo();
+// renderTodo();
